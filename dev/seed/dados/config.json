@@ -1,0 +1,13 @@
+{
+  "projeto": "storage-ioh",
+  "versao": "0.1.0",
+  "provedores": [
+    "s3",
+    "r2",
+    "minio"
+  ],
+  "recursos": {
+    "busca": true,
+    "dashboard": true
+  }
+}

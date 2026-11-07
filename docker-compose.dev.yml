@@ -1,0 +1,43 @@
+# Ambiente de desenvolvimento/demonstração:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build   (ou: make dev)
+# Adiciona um MinIO local com arquivos de exemplo e expõe a API em localhost:8080.
+# Conexão para cadastrar no app: provedor MinIO, endpoint http://minio:9000, chaves minioadmin / minioadmin.
+services:
+  api:
+    ports:
+      - "127.0.0.1:${API_PORT:-8080}:8080"
+
+  minio:
+    # As imagens oficiais minio/minio deixaram de ser publicadas no Docker Hub;
+    # esta é um build comunitário do mesmo servidor.
+    image: pgsty/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://127.0.0.1:9000/minio/health/live || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio-seed:
+    image: amazon/aws-cli:latest
+    depends_on:
+      minio: { condition: service_healthy }
+    environment:
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_DEFAULT_REGION: us-east-1
+    volumes:
+      - ./dev/seed:/seed:ro
+      - ./dev/seed.sh:/seed.sh:ro
+    entrypoint: ["sh", "/seed.sh"]
+    restart: "no"
+
+volumes:
+  miniodata:

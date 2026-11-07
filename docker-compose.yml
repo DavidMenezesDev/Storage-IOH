@@ -1,0 +1,109 @@
+name: storage-ioh
+
+x-backend: &backend
+  build:
+    context: ./backend
+    args:
+      WITH_FFMPEG: ${WITH_FFMPEG:-false}
+  image: storage-ioh-api:local
+  restart: unless-stopped
+  environment: &backend-env
+    DATABASE_URL: postgres://ioh:${POSTGRES_PASSWORD:-ioh}@postgres:5432/ioh?sslmode=disable
+    REDIS_URL: redis://redis:6379/0
+    MEILI_URL: http://meilisearch:7700
+    MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?defina MEILI_MASTER_KEY no .env}
+    APP_SECRET: ${APP_SECRET:?defina APP_SECRET no .env}
+    ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@local}
+    ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    PREVIEW_MODE: ${PREVIEW_MODE:-proxy}
+    UPLOAD_MAX_MB: ${UPLOAD_MAX_MB:-5120}
+    WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
+    LOG_LEVEL: ${LOG_LEVEL:-info}
+    TZ: ${TZ:-America/Sao_Paulo}
+    PUBLIC_URL: ${PUBLIC_URL:-}
+    SCAN_INTERVAL_MINUTES: ${SCAN_INTERVAL_MINUTES:-15}
+    INGEST_MAX_GB: ${INGEST_MAX_GB:-500}
+    SMTP_HOST: ${SMTP_HOST:-}
+    SMTP_PORT: ${SMTP_PORT:-587}
+    SMTP_USER: ${SMTP_USER:-}
+    SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    SMTP_FROM: ${SMTP_FROM:-}
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+    meilisearch: { condition: service_healthy }
+
+services:
+  web:
+    build: ./web
+    image: storage-ioh-web:local
+    restart: unless-stopped
+    environment:
+      API_URL: http://api:8080
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      api: { condition: service_healthy }
+
+  api:
+    <<: *backend
+    command: ["api"]
+    volumes:
+      - thumbs:/data/thumbs
+
+  worker:
+    <<: *backend
+    command: ["worker"]
+    healthcheck:
+      disable: true
+    depends_on:
+      api: { condition: service_healthy } # a API aplica as migrations
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ioh
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ioh}
+      POSTGRES_DB: ioh
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ioh -d ioh"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.32
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?defina MEILI_MASTER_KEY no .env}
+      MEILI_ENV: production
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meilidata:/meili_data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://127.0.0.1:7700/health || wget -qO- http://127.0.0.1:7700/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  pgdata:
+  redisdata:
+  meilidata:
+  thumbs:
