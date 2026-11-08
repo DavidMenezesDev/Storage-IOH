@@ -7,7 +7,6 @@
   <meta name="description" content="Central self-hosted de backups dos clientes, com alertas automáticos por webhook e e-mail quando um backup atrasa, encolhe ou some.">
   <meta property="og:title" content="Storage-IOH">
   <meta property="og:description" content="Saiba que o backup falhou antes do seu cliente. Alertas automáticos no Slack, Discord, Google Chat, Mattermost, n8n ou e-mail.">
-  <meta property="og:image" content="img/painel.png">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M9 11h14M9 16h14M9 21h9' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -125,22 +124,21 @@
     #por-dentro { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 88px 0; margin-top: 88px; }
     h2 { font-size: clamp(28px, 3.6vw, 38px); letter-spacing: -.03em; line-height: 1.1; margin: 0 0 12px; text-wrap: balance; }
     .sub { color: var(--muted-fg); margin: 0 0 40px; max-width: 40em; }
-    .shots { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: auto auto; gap: 16px; }
-    .shots figure:first-child { grid-row: span 2; }
-    @media (max-width: 800px) { .shots { grid-template-columns: 1fr; } .shots figure:first-child { grid-row: auto; } }
-    figure { margin: 0; }
-    .shot { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--muted); box-shadow: var(--shadow); }
-    .shot img { width: 100%; height: 100%; object-fit: cover; object-position: top left; }
-    .shot.missing { display: grid; place-items: center; min-height: 200px; color: var(--muted-fg); font-size: 13px; border-style: dashed; box-shadow: none; padding: 16px; text-align: center; }
-    figcaption { font-size: 14px; color: var(--muted-fg); margin-top: 10px; }
-    figcaption b { color: var(--fg); font-weight: 600; }
-
-    .stack { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 64px; }
-    @media (max-width: 800px) { .stack { grid-template-columns: 1fr; gap: 24px; } }
-    .stack h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted-fg); margin: 0 0 12px; font-weight: 600; }
-    .chips { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
-    .chips li { font-size: 14px; padding: 5px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); }
-    .chips li small { color: var(--muted-fg); margin-left: 4px; }
+    /* faixa de logos: a lista é duplicada via JS e desliza -50% em loop */
+    .marquee { overflow: hidden; padding: 8px 0;
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+              mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+    .track { display: flex; gap: 16px; width: max-content; list-style: none; margin: 0; padding: 0; animation: slide 40s linear infinite; }
+    .marquee:hover .track { animation-play-state: paused; }
+    @keyframes slide { to { transform: translateX(calc(-50% - 8px)); } }
+    .track li { display: flex; align-items: center; gap: 12px; padding: 12px 20px 12px 12px; border-radius: 14px;
+      border: 1px solid var(--border); background: var(--bg); font-weight: 600; font-size: 15px; white-space: nowrap; }
+    .track img { width: 40px; height: 40px; object-fit: contain; background: #fff; border-radius: 9px; padding: 5px; box-sizing: content-box; }
+    @media (prefers-reduced-motion: reduce) {
+      .marquee { mask-image: none; -webkit-mask-image: none; }
+      .track { animation: none; width: auto; flex-wrap: wrap; justify-content: center; padding: 0 16px; }
+      .track [aria-hidden="true"] { display: none; }
+    }
 
     footer { padding: 32px 0 48px; font-size: 14px; color: var(--muted-fg); }
     footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
@@ -156,7 +154,7 @@
     </a>
     <nav>
       <a href="#alertas">Alertas</a>
-      <a href="#por-dentro">Telas e tecnologias</a>
+      <a href="#por-dentro">Tecnologias</a>
       <a class="gh" href="https://github.com/DavidMenezesDev/Storage-IOH">GitHub →</a>
     </nav>
   </header>
@@ -228,44 +226,27 @@
     <!-- Seção 2: telas e tecnologias -->
     <section id="por-dentro">
       <div class="wrap">
-        <h2>Por dentro do Storage-IOH</h2>
-        <p class="sub">Um painel para a equipe de suporte acompanhar todos os clientes, com histórico, download e links temporários dos backups. Roda no seu servidor e funciona com qualquer storage compatível com S3.</p>
+        <h2>Feito com</h2>
+        <p class="sub">Backend em Go com fila no Redis, interface em Next.js e tudo empacotado em Docker Compose. Roda no seu servidor e funciona com qualquer storage compatível com S3.</p>
+      </div>
 
-        <div class="shots">
-          <figure>
-            <div class="shot"><img src="img/painel.png" alt="Painel com clientes que precisam de atenção, backups recentes e volume diário" loading="lazy"></div>
-            <figcaption><b>Painel.</b> Clientes que precisam de atenção, backups recentes e volume diário.</figcaption>
-          </figure>
-          <figure>
-            <div class="shot"><img src="img/cliente.png" alt="Página de um cliente com histórico de backups e gráfico dos últimos dias" loading="lazy"></div>
-            <figcaption><b>Cliente.</b> Histórico de backups e tamanho nos últimos dias.</figcaption>
-          </figure>
-          <figure>
-            <div class="shot"><img src="img/alertas.png" alt="Tela de alertas com canais configurados e histórico de envios" loading="lazy"></div>
-            <figcaption><b>Alertas.</b> Canais, teste de envio e histórico.</figcaption>
-          </figure>
-        </div>
-
-        <div class="stack">
-          <div>
-            <h3>Backend</h3>
-            <ul class="chips">
-              <li>Go</li><li>chi</li><li>PostgreSQL<small>pgx · goose</small></li><li>Redis<small>Asynq</small></li><li>Meilisearch</li><li>AWS SDK<small>S3</small></li>
-            </ul>
-          </div>
-          <div>
-            <h3>Frontend</h3>
-            <ul class="chips">
-              <li>Next.js 16</li><li>React 19</li><li>TypeScript</li><li>Tailwind CSS 4</li><li>TanStack Query</li><li>Recharts</li><li>Radix UI</li>
-            </ul>
-          </div>
-          <div>
-            <h3>Infra</h3>
-            <ul class="chips">
-              <li>Docker Compose</li><li>S3, MinIO, R2…<small>qualquer S3</small></li><li>Webhook</li><li>SMTP</li><li>GitHub Actions</li>
-            </ul>
-          </div>
-        </div>
+      <div class="marquee" aria-label="Tecnologias usadas no Storage-IOH">
+        <ul class="track">
+          <li><img src="img/tech/go.png" alt="" width="40" height="40">Go</li>
+          <li><img src="img/tech/postgresql.png" alt="" width="40" height="40">PostgreSQL</li>
+          <li><img src="img/tech/redis.png" alt="" width="40" height="40">Redis</li>
+          <li><img src="img/tech/meilisearch.png" alt="" width="40" height="40">Meilisearch</li>
+          <li><img src="img/tech/amazons3.png" alt="" width="40" height="40">Amazon S3</li>
+          <li><img src="img/tech/minio.png" alt="" width="40" height="40">MinIO</li>
+          <li><img src="img/tech/nextjs.png" alt="" width="40" height="40">Next.js</li>
+          <li><img src="img/tech/react.png" alt="" width="40" height="40">React</li>
+          <li><img src="img/tech/typescript.png" alt="" width="40" height="40">TypeScript</li>
+          <li><img src="img/tech/tailwindcss.png" alt="" width="40" height="40">Tailwind CSS</li>
+          <li><img src="img/tech/reactquery.png" alt="" width="40" height="40">TanStack Query</li>
+          <li><img src="img/tech/radixui.png" alt="" width="40" height="40">Radix UI</li>
+          <li><img src="img/tech/docker.png" alt="" width="40" height="40">Docker</li>
+          <li><img src="img/tech/githubactions.png" alt="" width="40" height="40">GitHub Actions</li>
+        </ul>
       </div>
     </section>
   </main>
@@ -278,15 +259,12 @@
   </footer>
 
   <script>
-    // Enquanto as capturas não forem adicionadas em site/img/, mostra um espaço reservado.
-    document.querySelectorAll('.shot img').forEach(function (img) {
-      function missing() {
-        var box = img.parentElement;
-        box.classList.add('missing');
-        box.textContent = 'Captura pendente: site/' + img.getAttribute('src');
-      }
-      if (img.complete && img.naturalWidth === 0) missing();
-      else img.addEventListener('error', missing);
+    // Duplica os logos para a faixa rolar sem emenda; a cópia fica oculta para leitores de tela.
+    var track = document.querySelector('.track');
+    Array.prototype.slice.call(track.children).forEach(function (li) {
+      var copy = li.cloneNode(true);
+      copy.setAttribute('aria-hidden', 'true');
+      track.appendChild(copy);
     });
   </script>
 </body>
