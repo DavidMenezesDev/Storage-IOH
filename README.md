@@ -195,3 +195,10 @@ dev/       dados de exemplo para o MinIO local
 ```
 
 Documentação da API: [docs/API.md](docs/API.md) e [docs/API-BACKUPS.md](docs/API-BACKUPS.md).
+
+## Licença
+
+Distribuído sob a [GNU General Public License v3.0](LICENSE) (GPL-3.0-only).
+Você pode usar, estudar, modificar e redistribuir este software; versões
+modificadas distribuídas devem manter a mesma licença e disponibilizar o
+código-fonte.

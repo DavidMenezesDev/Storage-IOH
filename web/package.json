@@ -1,6 +1,7 @@
 {
   "name": "storage-ioh-web",
   "version": "0.1.0",
+  "license": "GPL-3.0-only",
   "private": true,
   "packageManager": "pnpm@10.18.0",
   "scripts": {
