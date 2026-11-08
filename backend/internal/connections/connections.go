@@ -33,7 +33,7 @@ type Connection struct {
 	SecretAccessKey string `json:"-"`
 }
 
-// Input é usado tanto no POST (todos obrigatórios relevantes) quanto no PATCH (ponteiros nil = não alterar).
+// Input é usado tanto no POST s(todos obrigatórios relevantes) quanto no PATCH (ponteiros nil = não alterar).
 type Input struct {
 	Name                *string `json:"name"`
 	Provider            *string `json:"provider"`
