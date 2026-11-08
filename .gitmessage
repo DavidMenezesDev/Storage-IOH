@@ -1,0 +1,11 @@
+
+# tipo(escopo): descrição no imperativo, minúscula, sem ponto final (máx. 72)
+#
+# Corpo opcional: o quê e por quê (não o como). Quebre em ~72 colunas.
+#
+# Rodapé opcional:
+#   BREAKING CHANGE: o que quebrou e como migrar
+#   Closes #123
+#
+# tipos:   feat fix docs style refactor perf test build ci chore revert
+# escopos: api worker web db ingest alerts docker docs deps ci

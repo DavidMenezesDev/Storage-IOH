@@ -3,6 +3,8 @@
 Todas as mudanças relevantes do projeto são registradas aqui.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Não lançado]
+
 ## [0.5.0] — 2026-11-07
 
 Primeira versão pública. O Storage-IOH é uma central de backups dos clientes para empresas de ERP, com um explorador de object storage embutido.

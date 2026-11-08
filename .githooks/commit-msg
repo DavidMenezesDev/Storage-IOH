@@ -1,0 +1,39 @@
+#!/bin/sh
+# Valida a mensagem de commit no padrão Conventional Commits.
+# Uso: .githooks/commit-msg <arquivo-com-a-mensagem>
+# Também é usado pelo CI para validar o título dos PRs.
+
+file="$1"
+header=$(grep -v '^#' "$file" | sed -n '/./{p;q;}')
+
+# Mensagens geradas pelo Git passam direto.
+case "$header" in
+  Merge\ *|Revert\ *|fixup!\ *|squash!\ *|amend!\ *) exit 0 ;;
+esac
+
+types='feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert'
+pattern="^($types)(\([a-z0-9][a-z0-9-]*\))?!?: [^ ].*[^.]$"
+
+if ! printf '%s\n' "$header" | grep -Eq "$pattern"; then
+  cat >&2 <<MSG
+✖ Mensagem fora do padrão:
+    $header
+
+Formato: tipo(escopo): descrição
+  tipos:   ${types}
+  escopos: api, worker, web, db, ingest, alerts, docker, docs, deps, ci (opcional)
+  use "!" antes dos dois-pontos para breaking change: feat(api)!: ...
+
+Exemplos:
+  feat(web): adiciona filtro por status no painel
+  fix(worker): corrige cálculo de atraso com fuso horário
+
+Veja CONTRIBUTING.md.
+MSG
+  exit 1
+fi
+
+if [ "${#header}" -gt 72 ]; then
+  echo "✖ Primeira linha com ${#header} caracteres (máximo 72)." >&2
+  exit 1
+fi

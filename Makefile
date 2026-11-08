@@ -1,10 +1,15 @@
 COMPOSE      = docker compose
 COMPOSE_DEV  = docker compose -f docker-compose.yml -f docker-compose.dev.yml
 
-.PHONY: help env up down logs dev dev-down test test-go test-web lint build
+.PHONY: help hooks env up down logs dev dev-down test test-go test-web lint build
 
 help: ## Lista os comandos
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
+
+hooks: ## Ativa a validação de mensagens de commit e o template .gitmessage
+	git config core.hooksPath .githooks
+	git config commit.template .gitmessage
+	@echo "Hooks ativados."
 
 env: ## Cria o .env com segredos aleatórios (se ainda não existir)
 	@if [ -f .env ]; then echo ".env já existe"; else \
