@@ -175,6 +175,38 @@ func digits(s string) string {
 	}, s)
 }
 
+// ValidCNPJ confere o CNPJ (14 dígitos) pelos dígitos verificadores.
+func ValidCNPJ(s string) bool {
+	d := digits(s)
+	if len(d) != 14 {
+		return false
+	}
+	same := true
+	for i := 1; i < 14; i++ {
+		if d[i] != d[0] {
+			same = false
+		}
+	}
+	if same {
+		return false
+	}
+	check := func(n int) byte {
+		w := 2
+		sum := 0
+		for i := n - 1; i >= 0; i-- {
+			sum += int(d[i]-'0') * w
+			if w++; w > 9 {
+				w = 2
+			}
+		}
+		if r := sum % 11; r >= 2 {
+			return byte('0' + 11 - r)
+		}
+		return '0'
+	}
+	return d[12] == check(12) && d[13] == check(13)
+}
+
 // NormalizePrefix remove "/" inicial e garante "/" final (ou vazio = bucket inteiro).
 func NormalizePrefix(p string) string {
 	p = strings.TrimLeft(strings.TrimSpace(p), "/")
@@ -362,6 +394,11 @@ func (s *Store) List(ctx context.Context, f ListFilter) ([]*Client, error) {
 
 func (s *Store) Get(ctx context.Context, id string) (*Client, error) {
 	return scanClient(s.db.QueryRow(ctx, `SELECT `+clientCols+clientFrom+` WHERE c.id::text = $1`, id))
+}
+
+// ByDocument acha um cliente pelo CPF/CNPJ (só dígitos).
+func (s *Store) ByDocument(ctx context.Context, doc string) (*Client, error) {
+	return scanClient(s.db.QueryRow(ctx, `SELECT `+clientCols+clientFrom+` WHERE c.document = $1 LIMIT 1`, digits(doc)))
 }
 
 func (s *Store) Create(ctx context.Context, c *Client) (*Client, error) {

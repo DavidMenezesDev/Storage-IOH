@@ -100,3 +100,16 @@ func TestHuman(t *testing.T) {
 		t.Fatal(HumanBytes(1536), HumanDuration(26*time.Hour))
 	}
 }
+
+func TestValidCNPJ(t *testing.T) {
+	for _, ok := range []string{"11.222.333/0001-81", "11222333000181"} {
+		if !ValidCNPJ(ok) {
+			t.Errorf("%s deveria ser válido", ok)
+		}
+	}
+	for _, bad := range []string{"11222333000182", "00000000000000", "123", ""} {
+		if ValidCNPJ(bad) {
+			t.Errorf("%s deveria ser inválido", bad)
+		}
+	}
+}

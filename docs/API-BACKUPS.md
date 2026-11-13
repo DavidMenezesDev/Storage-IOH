@@ -99,7 +99,7 @@ interface AuditEntry {
 
 Ações de auditoria: `login`, `login.failed`, `object.download`, `object.upload`, `object.delete`, `object.rename`,
 `backup.download`, `backup.share`, `share.download`, `share.revoke`, `backup.ingest`, `retention.apply`,
-`client.create`, `client.update`, `client.delete`, `token.create`, `token.revoke`,
+`client.create`, `client.enroll`, `client.update`, `client.delete`, `token.create`, `token.revoke`,
 `connection.create`, `connection.update`, `connection.delete`, `user.create`, `user.update`, `user.delete`,
 `channel.create`, `channel.update`, `channel.delete`.
 
@@ -156,6 +156,48 @@ curl -fS -T backup.bak -H "Authorization: Bearer <TOKEN>" "<URL>/api/ingest/back
 ```powershell
 Invoke-WebRequest -Method Put -InFile "C:\backup\base.bak" -Headers @{Authorization="Bearer <TOKEN>"} -Uri "<URL>/api/ingest/base-$(Get-Date -Format yyyy-MM-dd).bak"
 ```
+
+## Autocadastro e agendamento (aplicativo do cliente)
+
+Fluxo: o aplicativo do cliente pergunta **nome da empresa + CNPJ + pasta de origem**, chama `POST /enroll`,
+guarda a chave de integração e registra uma tarefa agendada que envia o backup **todo dia às 15h ou 17h**.
+
+Habilite no `.env` do servidor: `ENROLL_SECRET`, `ENROLL_CONNECTION_ID`, `ENROLL_BUCKET` (ver `.env.example`).
+Sem `ENROLL_SECRET` a rota responde `404`.
+
+`POST /enroll` — sem login; `Authorization: Bearer <ENROLL_SECRET>` (segredo embutido no aplicativo).
+```json
+{ "name": "Empresa Exemplo LTDA", "document": "11.222.333/0001-81" }
+```
+`201`:
+```json
+{ "clientId": "…", "integrationKey": "ioh_…", "ingestUrl": "https://backup.exemplo.com.br/api/ingest/",
+  "prefix": "clientes/11222333000181/", "schedules": ["15:00", "17:00"] }
+```
+- `integrationKey` é o token de envio (`PUT /ingest/...`); só aparece nesta resposta.
+- Cria o cliente ativo em `ENROLL_PREFIX + CNPJ + "/"`, política padrão (diário, tolerância de 6 h).
+- `400` CNPJ/nome inválido · `401` segredo errado · `409` CNPJ já cadastrado (nunca devolve chave de cliente existente;
+  o admin gera outra em *Cliente → Envio*) · `503` conexão de cadastro mal configurada.
+- Auditoria: `client.enroll`.
+
+### Script agendado (Windows)
+
+O aplicativo grava `enviar-backup.ps1` e cria a tarefa (`15:00` ou `17:00`, escolha do usuário):
+
+```powershell
+# enviar-backup.ps1 — pasta de origem e chave definidas pelo aplicativo
+$Pasta = "C:\ERP\Backup"; $Url = "https://backup.exemplo.com.br/api/ingest/"; $Key = "ioh_..."
+$zip = Join-Path $env:TEMP ("backup-" + (Get-Date -Format yyyy-MM-dd) + ".zip")
+Compress-Archive -Path "$Pasta\*" -DestinationPath $zip -Force
+try { Invoke-WebRequest -Method Put -InFile $zip -Headers @{Authorization="Bearer $Key"} -Uri ($Url + (Split-Path $zip -Leaf)) -UseBasicParsing | Out-Null }
+finally { Remove-Item $zip -Force -ErrorAction SilentlyContinue }
+```
+```powershell
+$acao = New-ScheduledTaskAction -Execute "powershell.exe" -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\ERP\enviar-backup.ps1"'
+$gatilho = New-ScheduledTaskTrigger -Daily -At "15:00"      # ou "17:00"
+Register-ScheduledTask -TaskName "Storage-IOH Backup" -Action $acao -Trigger $gatilho -User "SYSTEM" -RunLevel Highest -Force
+```
+Linux: `0 15 * * * /opt/erp/enviar-backup.sh` (ou `0 17`), usando o `curl` da seção acima.
 
 ## Link público
 

@@ -35,6 +35,13 @@ type Config struct {
 	ScanIntervalMinutes int    `env:"SCAN_INTERVAL_MINUTES" envDefault:"15"`
 	IngestMaxGB         int64  `env:"INGEST_MAX_GB" envDefault:"500"`
 
+	// Autocadastro de clientes (POST /api/enroll). Desligado se ENROLL_SECRET estiver vazio.
+	// O segredo vai embutido no aplicativo do cliente; a conexão/bucket é onde os backups novos serão gravados.
+	EnrollSecret       string `env:"ENROLL_SECRET"`
+	EnrollConnectionID string `env:"ENROLL_CONNECTION_ID"`
+	EnrollBucket       string `env:"ENROLL_BUCKET"`
+	EnrollPrefix       string `env:"ENROLL_PREFIX" envDefault:"clientes/"`
+
 	SMTPHost     string `env:"SMTP_HOST"`
 	SMTPPort     int    `env:"SMTP_PORT" envDefault:"587"`
 	SMTPUser     string `env:"SMTP_USER"`
@@ -55,6 +62,14 @@ func Load() (*Config, error) {
 	}
 	if c.ScanIntervalMinutes < 1 {
 		c.ScanIntervalMinutes = 1
+	}
+	if c.EnrollSecret != "" {
+		if len(c.EnrollSecret) < 16 {
+			return nil, errors.New("ENROLL_SECRET precisa ter pelo menos 16 caracteres")
+		}
+		if c.EnrollConnectionID == "" || c.EnrollBucket == "" {
+			return nil, errors.New("ENROLL_SECRET exige ENROLL_CONNECTION_ID e ENROLL_BUCKET")
+		}
 	}
 	return &c, nil
 }

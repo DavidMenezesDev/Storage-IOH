@@ -59,6 +59,7 @@ func (s *Server) Router() http.Handler {
 
 		// sem login: envio de backups por token e links públicos
 		r.Put("/ingest/*", s.ingest)
+		r.Post("/enroll", s.enroll)
 		r.Get("/public/share/{token}", s.publicShare)
 
 		r.Group(func(r chi.Router) {
